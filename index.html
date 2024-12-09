@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Chat with AI</h1>
+    <div id="chat-box">
+        <!-- Chat messages will appear here -->
+    </div>
+    <div>
+        <input type="text" id="input" placeholder="Type your message here...">
+        <button id="send-btn">Send</button>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const inputField = document.getElementById('input');
+        const sendButton = document.getElementById('send-btn');
+
+        // Append messages to the chat box
+        function appendMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = message;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight; // Auto-scroll
+        }
+
+        // Send a message to the Flask server
+        async function sendMessage() {
+            const userInput = inputField.value.trim();
+            if (!userInput) return;
+
+            appendMessage('user', userInput); // Display user message
+            inputField.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userInput })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (data.error) {
+                    appendMessage('bot', `Error: ${data.error}`);
+                } else {
+                    appendMessage('bot', data.response);
+                }
+
+            } catch (error) {
+                appendMessage('bot', `Error: ${error.message}`);
+            }
+        }
+
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        inputField.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
